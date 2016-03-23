@@ -1,0 +1,478 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+
+  "Description": "Creation of network structure for a new project environment",
+
+  "Parameters" : {
+    "ProjectName" : {
+      "Type" : "String",
+      "Description" : "Project Name. E.g. Destapp"
+    },
+    "Environment" : {
+      "Type" : "String",
+      "Default" : "Live",
+      "AllowedValues" : ["Staging", "Quality", "Live"],
+      "Description" : "Environment"
+    },
+    "GigigoProjectId" : {
+      "Type" : "Number",
+      "Description" : "Gigigo Project Identifier"
+    },
+    "SubnetsZone1" : {
+      "Type" : "AWS::EC2::AvailabilityZone::Name",
+      "Description" : "Zone 1 for Multi-AZ Subnets"
+    },
+    "SubnetsZone2" : {
+      "Type" : "AWS::EC2::AvailabilityZone::Name",
+      "Description" : "Zone 2 for Multi-AZ Subnets"
+    }
+  },
+
+  "Conditions" : {
+    "LiveEnvironment" : { "Fn::Equals" : [ { "Ref" : "Environment" }, "Live" ] }
+  },
+
+  "Resources": {
+    "EnvVPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "GigigoProjectId" }, "0.0/16" ] ] },
+        "InstanceTenancy": "default",
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "false",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" } ] ] }
+          }
+        ]
+      }
+    },
+    "SubnetWeb1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "GigigoProjectId" }, { "Fn::If": ["LiveEnvironment", "111", "211"] }, "0/24" ] ] },
+        "AvailabilityZone": { "Ref" : "SubnetsZone1" },
+        "VpcId": {
+          "Ref": "EnvVPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Web", "A Zone" ] ] }
+          }
+        ]
+      }
+    },
+    "SubnetWeb2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "GigigoProjectId" }, { "Fn::If": ["LiveEnvironment", "112", "212"] }, "0/24" ] ] },
+        "AvailabilityZone": { "Ref" : "SubnetsZone2" },
+        "VpcId": {
+          "Ref": "EnvVPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Web", "B Zone" ] ] }
+          }
+        ]
+      }
+    },
+    "SubnetDatabase1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "GigigoProjectId" }, { "Fn::If": ["LiveEnvironment", "121", "221"] }, "0/24" ] ] },
+        "AvailabilityZone": { "Ref" : "SubnetsZone1" },
+        "VpcId": {
+          "Ref": "EnvVPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Database", "A Zone" ] ] }
+          }
+        ]
+      }
+    },
+    "SubnetDatabase2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "GigigoProjectId" }, { "Fn::If": ["LiveEnvironment", "122", "222"] }, "0/24" ] ] },
+        "AvailabilityZone": { "Ref" : "SubnetsZone2" },
+        "VpcId": {
+          "Ref": "EnvVPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Database", "B Zone" ] ] }
+          }
+        ]
+      }
+    },
+    "SubnetCache1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "GigigoProjectId" }, { "Fn::If": ["LiveEnvironment", "131", "231"] }, "0/24" ] ] },
+        "AvailabilityZone": { "Ref" : "SubnetsZone1" },
+        "VpcId": {
+          "Ref": "EnvVPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Cache", "A Zone" ] ] }
+          }
+        ]
+      }
+    },
+    "SubnetCache2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "GigigoProjectId" }, { "Fn::If": ["LiveEnvironment", "132", "232"] }, "0/24" ] ] },
+        "AvailabilityZone": { "Ref" : "SubnetsZone2" },
+        "VpcId": {
+          "Ref": "EnvVPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Cache", "B Zone" ] ] }
+          }
+        ]
+      }
+    },
+    "EnvInternetGateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" } ] ] }
+          }
+        ]
+      }
+    },
+    "EnvVPCGatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "EnvVPC"
+        },
+        "InternetGatewayId": {
+          "Ref": "EnvInternetGateway"
+        }
+      }
+    },
+    "RouteTablePublic": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "EnvVPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Public" ] ] }
+          }
+        ]
+      }
+    },
+    "PublicRoute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "RouteTablePublic"
+        },
+        "GatewayId": {
+          "Ref": "EnvInternetGateway"
+        }
+      },
+      "DependsOn": "EnvInternetGateway"
+    },
+    "SubnetWeb1RTPublicAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTablePublic"
+        },
+        "SubnetId": {
+          "Ref": "SubnetWeb1"
+        }
+      }
+    },
+    "SubnetWeb2RTPublicAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTablePublic"
+        },
+        "SubnetId": {
+          "Ref": "SubnetWeb2"
+        }
+      }
+    },
+    "RouteTablePrivate": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "EnvVPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Private" ] ] }
+          }
+        ]
+      }
+    },
+    "SubnetDatabase1RTPrivateAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTablePrivate"
+        },
+        "SubnetId": {
+          "Ref": "SubnetDatabase1"
+        }
+      }
+    },
+    "SubnetDatabase2RTPrivateAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTablePrivate"
+        },
+        "SubnetId": {
+          "Ref": "SubnetDatabase2"
+        }
+      }
+    },
+    "SubnetCache1RTPrivateAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTablePrivate"
+        },
+        "SubnetId": {
+          "Ref": "SubnetCache1"
+        }
+      }
+    },
+    "SubnetCache2RTPrivateAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTablePrivate"
+        },
+        "SubnetId": {
+          "Ref": "SubnetCache2"
+        }
+      }
+    },
+    "SecurityGroupLB": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": { "Fn::Join" : [ " ", [ "VPC", "SG", { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Load Balancer" ] ] },
+        "VpcId": {
+          "Ref": "EnvVPC"
+        }
+      }
+    },
+    "LBFromAllHttpRule": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SecurityGroupLB"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "80",
+        "ToPort": "80",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "LBFromAllHttpsRule": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SecurityGroupLB"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "443",
+        "ToPort": "443",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "SecurityGroupWeb": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": { "Fn::Join" : [ " ", [ "VPC", "SG", { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Web" ] ] },
+        "VpcId": {
+          "Ref": "EnvVPC"
+        }
+      }
+    },
+    "WebFromAllHttpRule": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SecurityGroupWeb"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "80",
+        "ToPort": "80",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "WebFromAllHttpsRule": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SecurityGroupWeb"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "443",
+        "ToPort": "443",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "WebFromGigigoSshRule": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SecurityGroupWeb"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "22",
+        "ToPort": "22",
+        "CidrIp": "91.126.137.68/32"
+      }
+    },
+    "WebFromBackupPCSshRule": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SecurityGroupWeb"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "22",
+        "ToPort": "22",
+        "CidrIp": "178.32.185.174/32"
+      }
+    },
+    "WebFromAllIcmpRule": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SecurityGroupWeb"
+        },
+        "IpProtocol": "icmp",
+        "FromPort": "-1",
+        "ToPort": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "SecurityGroupDB": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": { "Fn::Join" : [ " ", [ "VPC", "SG", { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Database" ] ] },
+        "VpcId": {
+          "Ref": "EnvVPC"
+        }
+      }
+    },
+    "DBFromWebMongoDBRule": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SecurityGroupDB"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "27017",
+        "ToPort": "27017",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWeb"
+        },
+        "SourceSecurityGroupOwnerId": { "Ref" : "AWS::AccountId" }
+      }
+    },
+    "DBFromGigigoSshRule": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SecurityGroupDB"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "22",
+        "ToPort": "22",
+        "CidrIp": "91.126.137.68/32"
+      }
+    },
+    "DBFromBackupPCSshRule": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SecurityGroupDB"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "22",
+        "ToPort": "22",
+        "CidrIp": "178.32.185.174/32"
+      }
+    },
+    "DBFromAllIcmpRule": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SecurityGroupDB"
+        },
+        "IpProtocol": "icmp",
+        "FromPort": "-1",
+        "ToPort": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "SecurityGroupCache": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": { "Fn::Join" : [ " ", [ "VPC", "SG", { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Cache" ] ] },
+        "VpcId": {
+          "Ref": "EnvVPC"
+        }
+      }
+    },
+    "CacheFromWebMemcachedRule": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SecurityGroupCache"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "11211",
+        "ToPort": "11211",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWeb"
+        },
+        "SourceSecurityGroupOwnerId": { "Ref" : "AWS::AccountId" }
+      }
+    },
+    "CacheFromWebRedisRule": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SecurityGroupCache"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "6379",
+        "ToPort": "6379",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWeb"
+        },
+        "SourceSecurityGroupOwnerId": { "Ref" : "AWS::AccountId" }
+      }
+    }
+  }
+}
