@@ -11,10 +11,10 @@
     "Environment" : {
       "Type" : "String",
       "Default" : "Live",
-      "AllowedValues" : ["Staging", "Quality", "Live"],
+      "AllowedValues" : [ "Quality", "Live" ],
       "Description" : "Project Environment"
     },
-    "GigigoProjectId" : {
+    "ProjectId" : {
       "Type" : "Number",
       "Description" : "Project Identifier, i.e., the second number of VPC CIDR block"
     },
@@ -32,11 +32,40 @@
     "LiveEnvironment" : { "Fn::Equals" : [ { "Ref" : "Environment" }, "Live" ] }
   },
 
+  "Mappings" : {
+    "ZoneId" : {
+      "us-east-1a" : { "Number" : "1", "Letter" : "A" },
+      "us-east-1b" : { "Number" : "2", "Letter" : "B" },
+      "us-east-1c" : { "Number" : "3", "Letter" : "C" },
+      "us-east-1d" : { "Number" : "4", "Letter" : "D" },
+      "us-east-1e" : { "Number" : "5", "Letter" : "E" },
+
+      "us-west-1a" : { "Number" : "1", "Letter" : "A" },
+      "us-west-1b" : { "Number" : "2", "Letter" : "B" },
+      "us-west-1c" : { "Number" : "3", "Letter" : "C" },
+
+      "us-west-2a" : { "Number" : "1", "Letter" : "A" },
+      "us-west-2b" : { "Number" : "2", "Letter" : "B" },
+      "us-west-2c" : { "Number" : "3", "Letter" : "C" },
+
+      "eu-west-1a" : { "Number" : "1", "Letter" : "A" },
+      "eu-west-1b" : { "Number" : "2", "Letter" : "B" },
+      "eu-west-1c" : { "Number" : "3", "Letter" : "C" },
+
+      "eu-central-1a" : { "Number" : "1", "Letter" : "A" },
+      "eu-central-1b" : { "Number" : "2", "Letter" : "B" },
+
+      "sa-east-1a" : { "Number" : "1", "Letter" : "A" },
+      "sa-east-1b" : { "Number" : "2", "Letter" : "B" },
+      "sa-east-1c" : { "Number" : "3", "Letter" : "C" }
+    }
+  },
+
   "Resources": {
     "EnvVPC": {
       "Type": "AWS::EC2::VPC",
       "Properties": {
-        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "GigigoProjectId" }, "0.0/16" ] ] },
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "ProjectId" }, "0.0/16" ] ] },
         "InstanceTenancy": "default",
         "EnableDnsSupport": "true",
         "EnableDnsHostnames": "false",
@@ -51,7 +80,7 @@
     "SubnetWeb1": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
-        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "GigigoProjectId" }, { "Fn::If": ["LiveEnvironment", "111", "211"] }, "0/24" ] ] },
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "ProjectId" }, { "Fn::Join" : [ "", [ { "Fn::If": [ "LiveEnvironment", "1", "2" ] }, "1", { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone1" }, "Number" ] } ] ] }, "0/24" ] ] },
         "AvailabilityZone": { "Ref" : "SubnetsZone1" },
         "VpcId": {
           "Ref": "EnvVPC"
@@ -59,7 +88,7 @@
         "Tags": [
           {
             "Key": "Name",
-            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Web", "A Zone" ] ] }
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Web", { "Fn::Join" : [ " ", [ { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone1" }, "Letter" ] }, "Zone" ] ] } ] ] }
           }
         ]
       }
@@ -67,7 +96,7 @@
     "SubnetWeb2": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
-        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "GigigoProjectId" }, { "Fn::If": ["LiveEnvironment", "112", "212"] }, "0/24" ] ] },
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "ProjectId" }, { "Fn::Join" : [ "", [ { "Fn::If": [ "LiveEnvironment", "1", "2" ] }, "1", { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone2" }, "Number" ] } ] ] }, "0/24" ] ] },
         "AvailabilityZone": { "Ref" : "SubnetsZone2" },
         "VpcId": {
           "Ref": "EnvVPC"
@@ -75,7 +104,7 @@
         "Tags": [
           {
             "Key": "Name",
-            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Web", "B Zone" ] ] }
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Web", { "Fn::Join" : [ " ", [ { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone2" }, "Letter" ] }, "Zone" ] ] } ] ] }
           }
         ]
       }
@@ -83,7 +112,7 @@
     "SubnetDatabase1": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
-        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "GigigoProjectId" }, { "Fn::If": ["LiveEnvironment", "121", "221"] }, "0/24" ] ] },
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "ProjectId" }, { "Fn::Join" : [ "", [ { "Fn::If": [ "LiveEnvironment", "1", "2" ] }, "2", { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone1" }, "Number" ] } ] ] }, "0/24" ] ] },
         "AvailabilityZone": { "Ref" : "SubnetsZone1" },
         "VpcId": {
           "Ref": "EnvVPC"
@@ -91,7 +120,7 @@
         "Tags": [
           {
             "Key": "Name",
-            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Database", "A Zone" ] ] }
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Database", { "Fn::Join" : [ " ", [ { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone1" }, "Letter" ] }, "Zone" ] ] } ] ] }
           }
         ]
       }
@@ -99,7 +128,7 @@
     "SubnetDatabase2": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
-        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "GigigoProjectId" }, { "Fn::If": ["LiveEnvironment", "122", "222"] }, "0/24" ] ] },
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "ProjectId" }, { "Fn::Join" : [ "", [ { "Fn::If": [ "LiveEnvironment", "1", "2" ] }, "2", { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone2" }, "Number" ] } ] ] }, "0/24" ] ] },
         "AvailabilityZone": { "Ref" : "SubnetsZone2" },
         "VpcId": {
           "Ref": "EnvVPC"
@@ -107,7 +136,7 @@
         "Tags": [
           {
             "Key": "Name",
-            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Database", "B Zone" ] ] }
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Database", { "Fn::Join" : [ " ", [ { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone2" }, "Letter" ] }, "Zone" ] ] } ] ] }
           }
         ]
       }
@@ -115,7 +144,7 @@
     "SubnetCache1": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
-        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "GigigoProjectId" }, { "Fn::If": ["LiveEnvironment", "131", "231"] }, "0/24" ] ] },
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "ProjectId" }, { "Fn::Join" : [ "", [ { "Fn::If": [ "LiveEnvironment", "1", "2" ] }, "3", { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone1" }, "Number" ] } ] ] }, "0/24" ] ] },
         "AvailabilityZone": { "Ref" : "SubnetsZone1" },
         "VpcId": {
           "Ref": "EnvVPC"
@@ -123,7 +152,7 @@
         "Tags": [
           {
             "Key": "Name",
-            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Cache", "A Zone" ] ] }
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Cache", { "Fn::Join" : [ " ", [ { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone1" }, "Letter" ] }, "Zone" ] ] } ] ] }
           }
         ]
       }
@@ -131,7 +160,7 @@
     "SubnetCache2": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
-        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "GigigoProjectId" }, { "Fn::If": ["LiveEnvironment", "132", "232"] }, "0/24" ] ] },
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "ProjectId" }, { "Fn::Join" : [ "", [ { "Fn::If": [ "LiveEnvironment", "1", "2" ] }, "3", { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone2" }, "Number" ] } ] ] }, "0/24" ] ] },
         "AvailabilityZone": { "Ref" : "SubnetsZone2" },
         "VpcId": {
           "Ref": "EnvVPC"
@@ -139,7 +168,7 @@
         "Tags": [
           {
             "Key": "Name",
-            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Cache", "B Zone" ] ] }
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Cache", { "Fn::Join" : [ " ", [ { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone2" }, "Letter" ] }, "Zone" ] ] } ] ] }
           }
         ]
       }
