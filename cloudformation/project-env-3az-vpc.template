@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
 
-  "Description": "Creation of network structure for a new project environment",
+  "Description": "Creation of network structure based on 3 availability zones for a new project environment",
 
   "Parameters" : {
     "ProjectName" : {
@@ -25,6 +25,10 @@
     "SubnetsZone2" : {
       "Type" : "AWS::EC2::AvailabilityZone::Name",
       "Description" : "Zone 2 for Multi-AZ Subnets"
+    },
+    "SubnetsZone3" : {
+      "Type" : "AWS::EC2::AvailabilityZone::Name",
+      "Description" : "Zone 3 for Multi-AZ Subnets"
     }
   },
 
@@ -109,6 +113,22 @@
         ]
       }
     },
+    "SubnetWeb3": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "ProjectId" }, { "Fn::Join" : [ "", [ { "Fn::If": [ "LiveEnvironment", "1", "2" ] }, "1", { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone3" }, "Number" ] } ] ] }, "0/24" ] ] },
+        "AvailabilityZone": { "Ref" : "SubnetsZone3" },
+        "VpcId": {
+          "Ref": "EnvVPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Web", { "Fn::Join" : [ " ", [ { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone3" }, "Letter" ] }, "Zone" ] ] } ] ] }
+          }
+        ]
+      }
+    },
     "SubnetDatabase1": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
@@ -141,6 +161,22 @@
         ]
       }
     },
+    "SubnetDatabase3": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "ProjectId" }, { "Fn::Join" : [ "", [ { "Fn::If": [ "LiveEnvironment", "1", "2" ] }, "2", { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone3" }, "Number" ] } ] ] }, "0/24" ] ] },
+        "AvailabilityZone": { "Ref" : "SubnetsZone3" },
+        "VpcId": {
+          "Ref": "EnvVPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Database", { "Fn::Join" : [ " ", [ { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone3" }, "Letter" ] }, "Zone" ] ] } ] ] }
+          }
+        ]
+      }
+    },
     "SubnetCache1": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
@@ -169,6 +205,22 @@
           {
             "Key": "Name",
             "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Cache", { "Fn::Join" : [ " ", [ { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone2" }, "Letter" ] }, "Zone" ] ] } ] ] }
+          }
+        ]
+      }
+    },
+    "SubnetCache3": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": { "Fn::Join" : [ ".", [ "10", { "Ref" : "ProjectId" }, { "Fn::Join" : [ "", [ { "Fn::If": [ "LiveEnvironment", "1", "2" ] }, "3", { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone3" }, "Number" ] } ] ] }, "0/24" ] ] },
+        "AvailabilityZone": { "Ref" : "SubnetsZone3" },
+        "VpcId": {
+          "Ref": "EnvVPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref" : "ProjectName" }, { "Ref" : "Environment" }, "Cache", { "Fn::Join" : [ " ", [ { "Fn::FindInMap" : [ "ZoneId", { "Ref" : "SubnetsZone3" }, "Letter" ] }, "Zone" ] ] } ] ] }
           }
         ]
       }
@@ -244,6 +296,17 @@
         }
       }
     },
+    "SubnetWeb3RTPublicAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTablePublic"
+        },
+        "SubnetId": {
+          "Ref": "SubnetWeb3"
+        }
+      }
+    },
     "RouteTablePrivate": {
       "Type": "AWS::EC2::RouteTable",
       "Properties": {
@@ -280,6 +343,17 @@
         }
       }
     },
+    "SubnetDatabase3RTPrivateAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTablePrivate"
+        },
+        "SubnetId": {
+          "Ref": "SubnetDatabase3"
+        }
+      }
+    },
     "SubnetCache1RTPrivateAssociation": {
       "Type": "AWS::EC2::SubnetRouteTableAssociation",
       "Properties": {
@@ -299,6 +373,17 @@
         },
         "SubnetId": {
           "Ref": "SubnetCache2"
+        }
+      }
+    },
+    "SubnetCache3RTPrivateAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTablePrivate"
+        },
+        "SubnetId": {
+          "Ref": "SubnetCache3"
         }
       }
     },

@@ -4,7 +4,10 @@ Utilities and resources to build and deploy Gigigo projects on Amazon Web Servic
 
 ## CloudFormation
 
-### project-env-vpc.template
+* project-env-2az-vpc.template => Creation of network structure based on 2 availability zones for a new project environment
+* project-env-3az-vpc.template => Creation of network structure based on 3 availability zones for a new project environment
+
+### project-env-2az-vpc.template & project-env-3az-vpc.template
 
 Enter `<Project>-<Env>-VPC` as stack name, where:
 
